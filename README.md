@@ -3,8 +3,18 @@
 A SketchUp plugin that turns plain-language tasks into real geometry. It asks
 for your **OpenCode API key**, then runs an **agentic tool-calling loop**
 against any OpenAI-compatible endpoint (default: `https://opencode.ai/zen/v1`)
-to build rooms, place furniture, and apply materials — plus optional **MCP
-servers** for extra skills.
+to build rooms, place furniture, and apply materials — plus a built-in
+**SketchUp MCP server** so any MCP client (opencode, Claude Desktop, …) can
+drive SketchUp too.
+
+## What's in the skill set (v1.1)
+
+- **Structure**: `create_room`, `create_wall` (with door/window openings), `set_units`, `add_tag`
+- **Furniture kit**: `create_bed`, `create_sofa`, `create_table`, `create_wardrobe`, `create_tv_unit`, `place_component`, `create_box`
+- **Auto-layout**: `auto_layout` — one call furnishes a bedroom / living / dining room heuristically (clearances, wall alignment)
+- **Makeovers**: `style_palette` — scandinavian / industrial / luxury / bohemian / minimalist
+- **Editing**: `duplicate_object`, `resize_group`, `move_group`, `rotate_group`, `select_by_name`, `delete_selection`, `apply_color`
+- **Introspection**: `query_scene`, `list_components`, `zoom_extents`
 
 ## Install
 
@@ -28,23 +38,34 @@ The agent plans, calls tools (`create_room`, `place_component`, `create_box`,
 a proper undo-able operation), and reports progress in the panel. **Stop**
 interrupts the loop; ⌘/Ctrl+Enter sends.
 
-## How it works
+## SketchUp MCP server
+
+The plugin starts a local MCP server (loopback only, token-authenticated —
+see **mcp/README.md** for client configs):
+
+- Endpoint `http://127.0.0.1:8723/mcp` (JSON-RPC, streamable-HTTP)
+- `GET /health`, `tools/list` exposes the entire skill set above
+- Start/stop via **Extensions → OpenCode Studio** menu; token in `config.json` → `mcp_token`
+- stdio bridge for opencode/Claude: `mcp/stdio_proxy.rb`
 
 ```
-┌─ SketchUp (Ruby, main thread) ──────────────┐
-│ HTML panel (UI::HtmlDialog)                 │
-│   ↑↓ callbacks                              │
-│ Agent loop  ── tools ── DesignTools (skills)│
-│     ↕ HTTPS (background thread)             │
-└──────│──────────────────────────────────────┘
-       ▼
-OpenAI-compatible API (OpenCode Zen) + optional MCP servers (streamable HTTP)
+┌─ opencode / Claude ─┐   stdio   ┌─────────────────────────────┐
+│  any MCP client  ───┼──────────▶│ mcp/stdio_proxy.rb          │
+└─────────────────────┘           └──────────┬──────────────────┘
+                                             │ HTTP 127.0.0.1:8723
+┌─ SketchUp (Ruby, main thread) ──────────────▼───────────────┐
+│ McpServer ⇄ DesignTools + FurnitureTools (skills)           │
+│ Agent loop ⇄ HTML panel  ⇄ ApiClient (background thread)    │
+└──────────────│──────────────────────────────────────────────┘
+               ▼
+   OpenAI-compatible API (OpenCode Zen) + optional remote MCP servers
 ```
 
-- **Skills** live in `opencode_studio/design_tools.rb` — coordinates in meters,
-  origin at room corner. Add your own by appending to `DEFINITIONS` and adding
-  a method of the same name.
-- **MCP**: add servers to `~/Library/Application Support/OpenCodeStudio/config.json`:
+- **Skills** live in `opencode_studio/design_tools.rb` and
+  `opencode_studio/furniture_tools.rb` — coordinates in meters, origin at room
+  corner. Add your own by appending to `DEFINITIONS` and adding a method of
+  the same name.
+- **Remote MCP**: add servers to the plugin's `config.json`:
   ```json
   { "mcp_servers": [ { "name": "my-tools", "url": "https://my-mcp.example.com/mcp", "headers": { "Authorization": "Bearer …" } } ] }
   ```

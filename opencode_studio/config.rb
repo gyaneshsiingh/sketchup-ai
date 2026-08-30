@@ -11,7 +11,10 @@ module Pranjali
         'api_key' => '',
         'base_url' => 'https://opencode.ai/zen/v1',
         'model' => 'grok-code-fast-1',
-        'mcp_servers' => [] # [{ 'name' => '..', 'url' => '..', 'headers' => {} }]
+        'mcp_servers' => [], # [{ 'name' => '..', 'url' => '..', 'headers' => {} }]
+        'mcp_server_enabled' => true,   # local SketchUp MCP server
+        'mcp_server_port' => 8723,
+        'mcp_token' => ''               # auto-generated on first start
       }.freeze
 
       attr_reader :path

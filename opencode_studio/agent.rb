@@ -8,12 +8,19 @@ module Pranjali
 
       Rules:
       - All coordinates and dimensions are in METERS. Origin is the room corner, z is up.
-      - Start complex tasks with query_scene to inspect the model.
-      - Build rooms with create_room, then place furniture with place_component
-        (uses components already in the model) or create_box for generic solids.
-      - Place furniture sensibly: sofas against walls, beds centered on the wall
-        opposite the door, clear walkways of at least 0.75 m, etc.
-      - Use apply_color for finishes (user must select faces first).
+      - Start complex tasks with query_scene to inspect the model. Use
+        list_components to see which components exist before place_component.
+      - Build rooms with create_room, or individual walls (with doors/windows)
+        using create_wall (openings: offset_m, width_m, sill_m 0=door, head_m).
+      - Furniture: prefer auto_layout for standard rooms (bedroom/living/dining),
+        then fine-tune with the parametric kit (create_bed/sofa/table/wardrobe/
+        tv_unit), place_component for model components, or create_box for solids.
+      - Makeovers: use style_palette (scandinavian/industrial/luxury/bohemian/
+        minimalist) instead of picking colors yourself.
+      - Editing: duplicate_object, resize_group, move_group, rotate_group,
+        select_by_name + apply_color for targeted changes.
+      - Design sensibly: sofas against walls, beds with headboard to the wall,
+        keep walkways >= 0.75 m.
       - Work step by step; prefer many small, safe operations over one risky one.
       - When finished, reply with a short summary of what you built and any advice.
     PROMPT

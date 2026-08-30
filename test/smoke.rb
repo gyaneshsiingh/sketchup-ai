@@ -14,7 +14,10 @@ require File.join(PLUGIN, 'version')
 require File.join(PLUGIN, 'config')
 require File.join(PLUGIN, 'api_client')
 require File.join(PLUGIN, 'mcp_client')
+require File.join(PLUGIN, 'main_thread')
 require File.join(PLUGIN, 'design_tools')
+require File.join(PLUGIN, 'furniture_tools')
+require File.join(PLUGIN, 'mcp_server')
 require File.join(PLUGIN, 'agent')
 
 $failures = []
@@ -54,6 +57,24 @@ mgr = Pranjali::OpenCodeStudio::McpManager.new(cfg)
 merged = mgr.merged_definitions(defs)
 check('no mcp => unchanged', merged.length == defs.length)
 check('builtin_call? true', mgr.builtin_call?('create_room'))
+
+# 6. Furniture kit + extended skills merged into the registry
+names = Pranjali::OpenCodeStudio::DesignTools.definitions.map { |d| d[:function][:name] }
+check('furniture skills merged', %w[create_bed create_sofa create_table create_wardrobe create_tv_unit create_wall auto_layout style_palette duplicate_object resize_group select_by_name list_components].all? { |n| names.include?(n) })
+bed_def = Pranjali::OpenCodeStudio::DesignTools.definitions.find { |d| d[:function][:name] == 'create_bed' }
+check('create_bed requires position', bed_def[:function][:parameters]['required'] == %w[x_m y_m])
+check('layout rooms known', Pranjali::OpenCodeStudio::FurnitureTools::LAYOUTS.keys.sort == %w[bedroom dining living])
+check('palettes known', Pranjali::OpenCodeStudio::FurnitureTools::STYLES.keys.length >= 5)
+
+# 7. Local SketchUp MCP server: JSON-RPC handling
+srv = Pranjali::OpenCodeStudio::McpServer.new(cfg, nil)
+r = JSON.parse(srv.send(:handle_rpc, { 'jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize' }))
+check('mcp initialize', r['result']['serverInfo']['name'] == 'sketchup-mcp')
+r = JSON.parse(srv.send(:handle_rpc, { 'jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list' }))
+check('mcp tools/list exposes all skills', r['result']['tools'].length == names.length && r['result']['tools'].first['inputSchema'].is_a?(Hash))
+r = JSON.parse(srv.send(:handle_rpc, { 'jsonrpc' => '2.0', 'id' => 3, 'method' => 'nope' }))
+check('mcp unknown method error', r['error']['code'] == -32_601)
+check('mcp notification => empty body', srv.send(:handle_rpc, { 'jsonrpc' => '2.0', 'method' => 'notifications/initialized' }) == '')
 
 if $failures.empty?
   puts "\nSMOKE OK"

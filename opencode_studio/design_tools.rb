@@ -285,14 +285,20 @@ module Pranjali
       ].freeze
 
       def definitions
-        DEFINITIONS
+        defs = DEFINITIONS.dup
+        defs += FurnitureTools.definitions if defined?(FurnitureTools)
+        defs
       end
 
       def call(name, args)
-        fn = DesignTools.method(name.to_s)
-        fn.call(args || {})
-      rescue NameError
-        "ERROR: unknown tool '#{name}'"
+        name = name.to_s
+        target = if DesignTools.respond_to?(name)
+                   DesignTools
+                 elsif defined?(FurnitureTools) && FurnitureTools.respond_to?(name)
+                   FurnitureTools
+                 end
+        return "ERROR: unknown tool '#{name}'" unless target
+        target.send(name, args || {})
       rescue StandardError => e
         "ERROR: #{e.class}: #{e.message}"
       end
