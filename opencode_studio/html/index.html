@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="dot" id="statusDot"></span>
+      <h1>OpenCode Studio</h1>
+    </div>
+    <button id="toggleSettings" class="ghost" title="Settings">⚙</button>
+  </header>
+
+  <section id="settings" class="hidden">
+    <label>OpenCode API Key
+      <input type="password" id="apiKey" placeholder="paste your opencode API key" autocomplete="off">
+    </label>
+    <label>Base URL
+      <input type="text" id="baseUrl">
+    </label>
+    <label>Model
+      <div class="row">
+        <input type="text" id="model" list="modelList">
+        <button id="refreshModels" class="ghost" title="Fetch model list">↻</button>
+      </div>
+      <datalist id="modelList"></datalist>
+    </label>
+    <button id="saveSettings" class="primary">Save &amp; Connect</button>
+    <p class="hint">Key is stored locally in your user profile. Uses any
+      OpenAI-compatible endpoint (default: OpenCode Zen). MCP servers can be
+      added in config.json.</p>
+  </section>
+
+  <main id="log"></main>
+
+  <footer>
+    <textarea id="prompt" rows="3" placeholder="Describe the design task… e.g. Build a 4m x 5m living room with a sofa against the north wall and a coffee table in the middle"></textarea>
+    <div class="row">
+      <button id="sendBtn" class="primary">Run Task</button>
+      <button id="stopBtn" class="danger" disabled>Stop</button>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
