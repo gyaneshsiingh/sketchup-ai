@@ -81,4 +81,15 @@ window.setState = setState;
 window.setModels = setModels;
 window.setRunning = setRunning;
 
-window.sketchup.ready();
+// The Ruby bridge may not be wired until slightly after DOM load — retry.
+function notifyReady(attempt) {
+  if (window.sketchup && window.sketchup.ready) {
+    try { window.sketchup.ready(); } catch (e) { /* retried below */ }
+  }
+  if (attempt < 5) {
+    setTimeout(function () { notifyReady(attempt + 1); }, 300);
+  }
+}
+
+window.addEventListener('load', function () { notifyReady(0); });
+notifyReady(0);

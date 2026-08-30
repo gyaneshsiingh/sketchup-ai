@@ -21,6 +21,10 @@ module Pranjali
           @dialog.show
         end
         push_state
+        # Re-push shortly after load in case the JS bridge wasn't ready.
+        if defined?(UI) && defined?(UI.start_timer)
+          UI.start_timer(0.3, false) { push_state }
+        end
       end
 
       def log(message, kind = 'info')
